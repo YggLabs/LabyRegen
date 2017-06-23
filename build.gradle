@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+    id 'maven'
+    id 'idea'
+    id 'eclipse'
+    id 'signing'
+    id 'com.github.hierynomus.license' version '0.14.0'
+    id 'ninja.miserable.blossom' version '1.0.1'
+    id 'org.spongepowered.plugin' version '0.8.1'
+}
+
+defaultTasks 'licenseFormat', 'build'
+
+group = pluginGroup
+version = "${spongeVersion}-${pluginVersion}"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+sponge.plugin.id = pluginId
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:7.0.0-SNAPSHOT'
+}
+
+blossom {
+    def location = 'src/main/java/io/github/ygglabs/labyregen/PluginInfo.java'
+
+    replaceToken '@id@', project.pluginId, location
+    replaceToken '@name@', project.pluginName, location
+    replaceToken '@version@', version, location
+    replaceToken '@description@', project.pluginDescription, location
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+    tasks.withType(Javadoc) {
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+signing {
+    required false
+    sign configurations.archives
+}
+
+license {
+    header = file('license')
+    include '**/*.java'
+
+    ignoreFailures = false
+    strictCheck = true
+
+    mapping {
+        java = 'SLASHSTAR_STYLE'
+    }
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'source'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+jar {
+    classifier = ''
+}
+
+artifacts {
+    archives sourceJar
+    archives javadocJar
+    archives jar
+}
+
+build.dependsOn(sourceJar)
+build.dependsOn(javadocJar)
+build.dependsOn(jar)
